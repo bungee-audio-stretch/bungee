@@ -4,7 +4,7 @@
 #include "Fourier.h"
 #include "Assert.h"
 
-#include "../submodules/pffft/pffft.h"
+#include "pffft.h"
 namespace Bungee::Fourier {
 
 #ifndef BUNGEE_USE_PFFFT
