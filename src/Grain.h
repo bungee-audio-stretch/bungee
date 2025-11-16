@@ -58,8 +58,6 @@ struct Grain
 	Resample::Internal inputResampled;
 	Eigen::ArrayXXf inputCopy;
 
-	Output::Segment segment;
-
 	Grain(int log2SynthesisHop, int channelCount);
 
 	InputChunk specify(const Request &request, Grain &previous, SampleRates sampleRates, int log2SynthesisHop, double bufferStartPosition, Internal::Instrumentation &instrumentation);

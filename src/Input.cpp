@@ -40,12 +40,7 @@ int Input::applyAnalysisWindow(const Eigen::Ref<const Eigen::ArrayXXf> &input, i
 		const int unmuted = half - muteHead - muteTail;
 
 		windowedInput.topRows(muteHead).setZero();
-
-		Window::Apply::special<false>(
-			window.segment(muteHead, unmuted),
-			input.middleRows(input.rows() / 2 + muteHead, unmuted),
-			windowedInput.middleRows(muteHead, unmuted));
-
+		windowedInput.middleRows(muteHead, unmuted) = input.middleRows(input.rows() / 2 + muteHead, unmuted).colwise() * window.segment(muteHead, unmuted);
 		windowedInput.middleRows(half - muteTail, muteTail).setZero();
 	}
 
@@ -56,12 +51,7 @@ int Input::applyAnalysisWindow(const Eigen::Ref<const Eigen::ArrayXXf> &input, i
 		const int unmuted = half - muteHead - muteTail;
 
 		windowedInput.middleRows(half, muteHead).setZero();
-
-		Window::Apply::special<false>(
-			window.segment(window.rows() - muteTail - unmuted, unmuted),
-			input.middleRows(input.rows() / 2 - half + muteHead, unmuted),
-			windowedInput.middleRows(half + muteHead, unmuted));
-
+		windowedInput.middleRows(half + muteHead, unmuted) = input.middleRows(input.rows() / 2 - half + muteHead, unmuted).colwise() * window.segment(window.rows() - muteTail - unmuted, unmuted);
 		windowedInput.bottomRows(muteTail).setZero();
 	}
 

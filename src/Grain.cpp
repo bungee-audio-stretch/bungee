@@ -15,7 +15,6 @@ using namespace Internal;
 
 Grain::Grain(int log2SynthesisHop, int channelCount) :
 	log2TransformLength(log2SynthesisHop + 3),
-	segment(log2SynthesisHop, channelCount),
 	inputResampled(1 << log2TransformLength, channelCount)
 {
 	request.position = request.speed = std::numeric_limits<float>::quiet_NaN();

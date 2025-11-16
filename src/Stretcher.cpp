@@ -111,13 +111,7 @@ void Internal::Stretcher::synthesiseGrain(OutputChunk &outputChunk)
 
 	output.applySynthesisWindow(log2SynthesisHop, grains, output.synthesisWindow);
 
-	Output::Segment::lapPadding(grains[3].segment, grains[2].segment);
-
-	outputChunk = grains[3].segment.resample(
-		output.resampleOffset,
-		grains[2].resampleOperations.output,
-		grains[1].resampleOperations.output,
-		output.bufferResampled);
+	outputChunk = output.resample(grains[2].resampleOperations.output, grains[1].resampleOperations.output);
 
 	outputChunk.request[OutputChunk::begin] = &grains[2].request;
 	outputChunk.request[OutputChunk::end] = &grains[1].request;

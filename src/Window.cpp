@@ -28,16 +28,4 @@ Eigen::ArrayXf fromFrequencyDomainCoefficients(Fourier::Transforms &transforms, 
 	return window;
 }
 
-template <bool add>
-void Apply::special(const Eigen::Ref<const Eigen::ArrayXf> &window, const Eigen::Ref<const Eigen::ArrayXXf> &input, Eigen::Ref<Eigen::ArrayXXf> output)
-{
-	if constexpr (add)
-		output += input.colwise() * window;
-	else
-		output = input.colwise() * window;
-}
-
-template void Apply::special<false>(const Eigen::Ref<const Eigen::ArrayXf> &window, const Eigen::Ref<const Eigen::ArrayXXf> &input, Eigen::Ref<Eigen::ArrayXXf> output);
-template void Apply::special<true>(const Eigen::Ref<const Eigen::ArrayXf> &window, const Eigen::Ref<const Eigen::ArrayXXf> &input, Eigen::Ref<Eigen::ArrayXXf> output);
-
 } // namespace Bungee::Window

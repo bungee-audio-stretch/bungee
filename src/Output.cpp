@@ -10,79 +10,47 @@ namespace Bungee {
 Output::Output(Fourier::Transforms &transforms, int log2SynthesisHop, int channelCount, int maxOutputChunkSize, float windowGain, std::initializer_list<float> windowCoefficients) :
 	synthesisWindow{Window::fromFrequencyDomainCoefficients(transforms, log2SynthesisHop + 2, windowGain, windowCoefficients)},
 	inverseTransformed(8 << log2SynthesisHop, channelCount),
-	bufferResampled(maxOutputChunkSize, channelCount)
+	bufferResampled(maxOutputChunkSize, channelCount),
+	lappedSynthesisBuffer(1 << (log2SynthesisHop + 3), channelCount)
 {
 	transforms.prepareInverse(log2SynthesisHop + 3);
+	lappedSynthesisBuffer.array.setZero();
+	lappedSynthesisBuffer.frameCount = 1 << log2SynthesisHop;
 }
 
 void Output::applySynthesisWindow(int log2SynthesisHop, Grains &grains, const Eigen::Ref<const Eigen::ArrayXf> &window)
 {
+	BUNGEE_ASSERT1(lappedSynthesisBuffer.frameCount == window.rows() / 4);
+
+	lappedSynthesisBuffer.array.topRows(Bungee::Resample::Internal::padding) = lappedSynthesisBuffer.array.middleRows(window.rows() / 4, Bungee::Resample::Internal::padding);
+
 	const auto quadrantSize = (int)window.rows() / 4;
 	const auto hopsPerTransform = 1 << (grains[0].log2TransformLength - log2SynthesisHop);
 
-	grains[0].segment.bufferLapped.frameCount = 0;
-	grains[0].segment.bufferLapped.allZeros = true;
-
-	for (int i = 0; i < 4; ++i)
+	if (grains[0].valid())
 	{
-		auto &quandrant = grains[3 - i].segment.bufferLapped;
-
-		if (grains[0].valid())
+		for (int i = 0; i < 4; ++i)
 		{
 			auto windowSegment = window.segment(quadrantSize * (i ^ 2), quadrantSize);
 
 			auto j = (i + hopsPerTransform - 2) % hopsPerTransform;
 			auto inputSegment = inverseTransformed.middleRows(quadrantSize * j, quadrantSize);
 
-			const bool add = quandrant.frameCount != 0;
-			dispatchApply[add](windowSegment, inputSegment, quandrant.unpadded().topRows(quadrantSize));
-			quandrant.allZeros = false;
+			if (i < 3)
+				lappedSynthesisBuffer.unpadded().middleRows(i * quadrantSize, quadrantSize) = inputSegment.colwise() * windowSegment + lappedSynthesisBuffer.unpadded().middleRows((i + 1) * quadrantSize, quadrantSize);
+			else
+				lappedSynthesisBuffer.unpadded().middleRows(i * quadrantSize, quadrantSize) = inputSegment.colwise() * windowSegment;
 		}
-		else
-		{
-			if (!quandrant.frameCount)
-				quandrant.unpadded().topRows(quadrantSize).setZero();
-		}
-
-		quandrant.frameCount = quadrantSize;
 	}
-
-	grains[2].segment.needsResample =
-		grains[1].resampleOperations.output.function ||
-		grains[0].resampleOperations.output.function;
-}
-
-Output::Segment::Segment(int log2FrameCount, int channelCount) :
-	bufferLapped(1 << log2FrameCount, channelCount)
-{
-}
-
-void Output::Segment::lapPadding(Segment &current, Segment &next)
-{
-	constexpr auto n = Resample::Internal::padding;
-
-	if (current.needsResample)
+	else
 	{
-		if (next.bufferLapped.allZeros)
-			current.bufferLapped.array.middleRows(n + current.bufferLapped.frameCount, n).setZero();
-		else
-			current.bufferLapped.array.middleRows(n + current.bufferLapped.frameCount, n) = next.bufferLapped.array.middleRows(n, n);
-	}
-
-	if (current.needsResample || next.needsResample)
-	{
-		if (current.bufferLapped.allZeros)
-			next.bufferLapped.array.topRows(n).setZero();
-		else
-			next.bufferLapped.array.topRows(n) = current.bufferLapped.array.middleRows(current.bufferLapped.frameCount, n);
+		lappedSynthesisBuffer.unpadded().topRows(3 * lappedSynthesisBuffer.frameCount) = lappedSynthesisBuffer.unpadded().middleRows(lappedSynthesisBuffer.frameCount, 3 * lappedSynthesisBuffer.frameCount);
+		lappedSynthesisBuffer.unpadded().middleRows(3 * lappedSynthesisBuffer.frameCount, lappedSynthesisBuffer.frameCount).setZero();
 	}
 }
 
-inline OutputChunk Output::Segment::outputChunk(Eigen::Ref<Eigen::ArrayXXf> ref, bool allZeros)
+inline auto makeOutputChunk(Eigen::Ref<Eigen::ArrayXXf> ref)
 {
-	if (allZeros)
-		ref.setZero();
-
 	OutputChunk outputChunk{};
 	outputChunk.data = ref.data();
 	outputChunk.frameCount = (int)ref.rows();
@@ -90,38 +58,18 @@ inline OutputChunk Output::Segment::outputChunk(Eigen::Ref<Eigen::ArrayXXf> ref,
 	return outputChunk;
 }
 
-OutputChunk Output::Segment::resample(double &resampleOffset, Resample::Operation resampleOperationBegin, Resample::Operation resampleOperationEnd, Eigen::Ref<Eigen::ArrayXXf> bufferResampled)
+OutputChunk Output::resample(Resample::Operation resampleOperationBegin, Resample::Operation resampleOperationEnd)
 {
-	if (!resampleOperationEnd.function)
+	const auto resampleFunction = resampleOperationBegin.function ? resampleOperationBegin.function : resampleOperationEnd.function;
+	if (resampleFunction)
 	{
-		resampleOperationEnd.ratio = 1.f;
-		resampleOperationEnd.function = resampleOperationBegin.function;
-	}
-
-	if (!resampleOperationBegin.function)
-		resampleOperationBegin.ratio = resampleOperationEnd.ratio;
-
-	BUNGEE_ASSERT1(resampleOperationBegin.ratio != 0.f);
-	BUNGEE_ASSERT1(resampleOperationEnd.ratio != 0.f);
-
-	if (resampleOperationEnd.function)
-	{
-		bufferLapped.offset = resampleOffset;
-
-		const auto muteHead = bufferLapped.allZeros ? bufferResampled.rows() : 0;
-		Resample::External external(bufferResampled, muteHead, 0);
-
-		const bool alignEnd = resampleOperationEnd.ratio == 1.;
-
-		resampleOperationEnd.function(bufferLapped, external, resampleOperationBegin.ratio, resampleOperationEnd.ratio, alignEnd);
-
-		resampleOffset = bufferLapped.offset;
-
-		return outputChunk(bufferResampled.topRows(external.activeFrameCount), bufferLapped.allZeros);
+		Resample::External external(bufferResampled, 0, 0);
+		resampleFunction(lappedSynthesisBuffer, external, resampleOperationBegin.ratio, resampleOperationEnd.ratio, !resampleOperationEnd.function);
+		return makeOutputChunk(bufferResampled.topRows(external.activeFrameCount));
 	}
 	else
 	{
-		return outputChunk(bufferLapped.unpadded().topRows(bufferLapped.frameCount), bufferLapped.allZeros);
+		return makeOutputChunk(lappedSynthesisBuffer.unpadded().topRows(lappedSynthesisBuffer.frameCount));
 	}
 }
 

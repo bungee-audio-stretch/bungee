@@ -26,7 +26,6 @@ struct Internal
 
 	Eigen::ArrayXXf array;
 	int frameCount{};
-	bool allZeros{true};
 	double offset{};
 
 	Internal(int maxFrameCount, int channelCount) :
@@ -233,8 +232,8 @@ typedef decltype(&resample<Nearest, Output>) Function;
 
 struct Operation
 {
-	Function function;
-	double ratio;
+	Function function{};
+	double ratio{1.};
 };
 
 struct Operations
@@ -247,16 +246,8 @@ struct Operations
 		input.ratio = 1. / resampleRatio;
 		output.ratio = resampleRatio;
 
-		if constexpr (true)
-		{
-			input.function = &resample<Bilinear, Input>;
-			output.function = &resample<Bilinear, Output>;
-		}
-		else
-		{
-			input.function = &resample<Nearest, Input>;
-			output.function = &resample<Nearest, Output>;
-		}
+		input.function = &resample<Bilinear, Input>;
+		output.function = &resample<Bilinear, Output>;
 
 		if (resampleMode == resampleMode_forceOut)
 			input.function = nullptr;
