@@ -5,6 +5,7 @@
 
 #include "Assert.h"
 #include "Fourier.h"
+#include "Resample.h"
 
 #include <Eigen/Core>
 
@@ -15,9 +16,8 @@ struct Input
 	Eigen::ArrayXf window;
 	Eigen::ArrayXXf windowedInput;
 	Eigen::ArrayXXf windowedInputPrevious;
+	Resample::Internal resampled;
 	float scale;
-
-	Input() {}
 
 	Input(int log2SynthesisHop, int channelCount, Fourier::Transforms &transforms);
 

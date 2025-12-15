@@ -19,10 +19,12 @@ static constexpr float gain = (3 * pi) / (3 * pi + 8);
 
 Input::Input(int log2SynthesisHop, int channelCount, Fourier::Transforms &transforms) :
 	window(Window::fromFrequencyDomainCoefficients(transforms, log2SynthesisHop + 3, gain / (8 << log2SynthesisHop), {1.f, 0.5f})),
-	windowedInput{(8 << log2SynthesisHop), channelCount}
+	windowedInput{8 << log2SynthesisHop, channelCount},
+	resampled(8 << log2SynthesisHop, channelCount)
 {
 	windowedInput.setZero();
 	transforms.prepareForward(log2SynthesisHop + 3);
+	resampled.frameCount = 8 << log2SynthesisHop;
 }
 
 int Input::applyAnalysisWindow(const Eigen::Ref<const Eigen::ArrayXXf> &input, int muteFrameCountHead, int muteFrameCountTail)

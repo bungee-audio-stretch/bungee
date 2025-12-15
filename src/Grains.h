@@ -19,13 +19,15 @@ struct Grains
 	{
 	}
 
+	void prepare();
+
 	void rotate();
 
 	bool flushed() const;
 
 	inline Grain &operator[](size_t i)
 	{
-		return *vector[3 - i];
+		return *vector[i];
 	}
 };
 

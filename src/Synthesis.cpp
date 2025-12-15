@@ -8,15 +8,15 @@
 #include "Stretch.h"
 #include "log2.h"
 
-namespace Bungee::Synthesis {
+namespace Bungee {
 
 static constexpr int flagReverse0 = 1 << 0;
 static constexpr int flagReverse1 = 1 << 1;
 
-struct Temporal
+struct Synthesis::Temporal
 {
 	template <int index>
-	static void special(int log2SynthesisHop, Grain &grain, Grain &previous)
+	static void special(int log2SynthesisHop, Grain &grain, Grain &previous, Eigen::ArrayX<Phase::Type> &delta)
 	{
 		typedef Stretch::Time<!!(index & flagReverse0), !!(index & flagReverse1)> StretchTime;
 
@@ -30,15 +30,15 @@ struct Temporal
 
 			const Phase::Type offset = StretchTime::offset(grain.phase[peak], previous.phase[peak]);
 			const Phase::Type stretched = stretchTime.delta(grain.phase[peak], previous.phase[peak], peak);
-			grain.delta[i] = previous.rotation[peak] - offset + stretched;
-			BUNGEE_ASSERT2(!grain.passthrough || !grain.delta[i]);
+			delta[i] = previous.rotation[peak] - offset + stretched;
+			BUNGEE_ASSERT2(!grain.passthrough || !delta[i]);
 
-			grain.delta[i] -= grain.rotation[peak];
+			delta[i] -= grain.rotation[peak];
 		}
 	}
 };
 
-void synthesise(int log2SynthesisHop, Grain &grain, Grain &previous)
+void Synthesis::synthesise(int log2SynthesisHop, Grain &grain, Grain &previous)
 {
 	Stretch::Frequency(grain.analysis.speed)(grain.validBinCount, grain.rotation, grain.phase);
 	BUNGEE_ASSERT2(!grain.passthrough || grain.rotation.topRows(grain.validBinCount).isZero());
@@ -52,18 +52,18 @@ void synthesise(int log2SynthesisHop, Grain &grain, Grain &previous)
 			index |= flagReverse1;
 
 		static constexpr Dispatch<Temporal, 4> dispatch;
-		dispatch[index](log2SynthesisHop, grain, previous);
+		dispatch[index](log2SynthesisHop, grain, previous, delta);
 	}
 	else
 	{
 		for (int i = 0; i < grain.partials.size(); ++i)
-			grain.delta[i] = -grain.rotation[grain.partials[i].peak];
+			delta[i] = -grain.rotation[grain.partials[i].peak];
 	}
 
 	for (int i = 0, n = 0; i < grain.partials.size(); ++i)
 		do
 		{
-			grain.rotation[n] += grain.delta[i];
+			grain.rotation[n] += delta[i];
 			BUNGEE_ASSERT1(!grain.passthrough || !grain.rotation[n]);
 		} while (++n < grain.partials[i].end);
 
@@ -73,4 +73,4 @@ void synthesise(int log2SynthesisHop, Grain &grain, Grain &previous)
 	grain.rotation[mNyquist] = grain.rotation[mNyquist - 1];
 }
 
-} // namespace Bungee::Synthesis
+} // namespace Bungee

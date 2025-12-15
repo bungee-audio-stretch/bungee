@@ -14,16 +14,13 @@ namespace Bungee {
 using namespace Internal;
 
 Grain::Grain(int log2SynthesisHop, int channelCount) :
-	log2TransformLength(log2SynthesisHop + 3),
-	inputResampled(1 << log2TransformLength, channelCount)
+	channelCount(channelCount),
+	log2TransformLength(log2SynthesisHop + 3)
 {
 	request.position = request.speed = std::numeric_limits<float>::quiet_NaN();
 	request.pitch = 1.;
-	Fourier::resize<true>(log2TransformLength, channelCount, transformed);
-	Fourier::resize<true>(log2TransformLength, 1, phase);
 	Fourier::resize<true>(log2TransformLength, 1, energy);
 	Fourier::resize<true>(log2TransformLength, 1, rotation);
-	Fourier::resize<true>(log2TransformLength, 1, delta);
 	partials.reserve(1 << log2TransformLength);
 }
 
@@ -38,7 +35,7 @@ InputChunk Grain::specify(const Request &r, Grain &previous, SampleRates sampleR
 	requestHop = request.position - previous.request.position;
 
 	if (instrumentation.firstGrain)
-		instrumentation.log("Stretcher: sampleRates=[%d, %d] channelCount=%d  synthesisHop=%d", sampleRates.input, sampleRates.output, transformed.cols(), 1 << log2TransformLength >> 3);
+		instrumentation.log("Stretcher: sampleRates=[%d, %d] channelCount=%d  synthesisHop=%d", sampleRates.input, sampleRates.output, inputCopy.cols(), 1 << log2TransformLength >> 3);
 	instrumentation.firstGrain = false;
 
 	if (!request.reset && !std::isnan(request.speed) && !std::isnan(requestHop) && std::abs(request.speed * unitHop - requestHop) > 1.)
@@ -71,10 +68,9 @@ InputChunk Grain::specify(const Request &r, Grain &previous, SampleRates sampleR
 	}
 
 	log2TransformLength = log2SynthesisHop + 3;
-	inputResampled.frameCount = 1 << log2TransformLength;
 
 	{
-		int halfInputFrameCount = inputResampled.frameCount / 2;
+		int halfInputFrameCount = 1 << log2TransformLength >> 1;
 		if (resampleOperations.input.ratio != 1.f)
 			halfInputFrameCount = int(std::ceil(halfInputFrameCount / resampleOperations.input.ratio)) + 2;
 
@@ -109,8 +105,8 @@ void Grain::overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHe
 	inputCopy.middleRows(muteFrameCountHead, activeRows) = input.middleRows(muteFrameCountHead, activeRows);
 	inputCopy.bottomRows(muteFrameCountTail).setZero();
 
-	if (inputCopy.hasNaN())
-		instrumentation.log("BAD INPUT: NaN detected in input audio");
+	if (!inputCopy.isFinite().all())
+		instrumentation.log("BAD INPUT: input audio is not all finite samples");
 
 	const auto overlapStart = std::max(inputChunk.begin, previous.inputChunk.begin);
 	const auto overlapEnd = std::min(inputChunk.end, previous.inputChunk.end);
@@ -132,23 +128,23 @@ void Grain::overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHe
 	}
 }
 
-Eigen::Ref<Eigen::ArrayXXf> Grain::resampleInput(Eigen::Ref<Eigen::ArrayXXf> input, int log2WindowLength, int &muteFrameCountHead, int &muteFrameCountTail)
+Eigen::Ref<Eigen::ArrayXXf> Grain::resampleInput(Eigen::Ref<Eigen::ArrayXXf> input, int log2WindowLength, int &muteFrameCountHead, int &muteFrameCountTail, Resample::Internal &resampled)
 {
 	if (resampleOperations.input.function)
 	{
 		BUNGEE_ASSERT1(input.rows() % 2 == 0);
 
-		inputResampled.offset = inputPosition - request.position - input.rows() / 2;
-		inputResampled.offset *= resampleOperations.input.ratio;
-		inputResampled.offset += 1 << (log2WindowLength - 1);
-		inputResampled.offset -= analysis.positionError;
+		resampled.offset = inputPosition - request.position - input.rows() / 2;
+		resampled.offset *= resampleOperations.input.ratio;
+		resampled.offset += 1 << (log2WindowLength - 1);
+		resampled.offset -= analysis.positionError;
 
 		Resample::External external(input, muteFrameCountHead, muteFrameCountTail);
-		resampleOperations.input.function(inputResampled, external, resampleOperations.input.ratio, resampleOperations.input.ratio, false);
+		resampleOperations.input.function(resampled, external, resampleOperations.input.ratio, resampleOperations.input.ratio, false);
 
 		muteFrameCountHead = muteFrameCountTail = 0;
 
-		return inputResampled.unpadded().topRows(inputResampled.frameCount);
+		return resampled.unpadded().topRows(resampled.frameCount);
 	}
 	else
 	{

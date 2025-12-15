@@ -16,12 +16,16 @@ Internal::Stretcher::Stretcher(SampleRates sampleRates, int channelCount, int lo
 	Timing(sampleRates, log2SynthesisHopAdjust),
 	input(log2SynthesisHop, channelCount, transforms),
 	grains(4),
-	output(transforms, log2SynthesisHop, channelCount, maxOutputFrameCount(true), 0.25f, {1.f, 0.5f})
+	output(transforms, log2SynthesisHop, channelCount, maxOutputFrameCount(true), 0.25f, {1.f, 0.5f}),
+	synthesis(log2SynthesisHop + 3)
 {
 	for (auto &grain : grains.vector)
 		grain = std::make_unique<Grain>(log2SynthesisHop, channelCount);
 
-	Fourier::resize<true>(grains[0].log2TransformLength, 1, temporary);
+	grains.prepare();
+
+	Fourier::resize<true>(log2SynthesisHop + 3, 1, temporary);
+	Fourier::resize<true>(log2SynthesisHop + 3, channelCount, transformed);
 }
 
 InputChunk Internal::Stretcher::specifyGrain(const Request &request, double bufferStartPosition)
@@ -55,21 +59,21 @@ void Internal::Stretcher::analyseGrain(const float *data, std::ptrdiff_t stride,
 	{
 		auto m = grain.inputChunkMap(data, stride, muteFrameCountHead, muteFrameCountTail, previous, *this);
 
-		auto ref = grain.resampleInput(m, log2SynthesisHop + 3, muteFrameCountHead, muteFrameCountTail);
+		auto ref = grain.resampleInput(m, log2SynthesisHop + 3, muteFrameCountHead, muteFrameCountTail, input.resampled);
 
 		auto log2TransformLength = input.applyAnalysisWindow(ref, muteFrameCountHead, muteFrameCountTail);
 
-		transforms.forward(log2TransformLength, input.windowedInput, grain.transformed);
+		transforms.forward(log2TransformLength, input.windowedInput, transformed);
 
 		const auto n = Fourier::binCount(grain.log2TransformLength) - 1;
 		grain.validBinCount = std::min<int>(std::ceil(n / grain.resampleOperations.output.ratio), n) + 1;
-		grain.transformed.middleRows(grain.validBinCount, n + 1 - grain.validBinCount).setZero();
+		transformed.middleRows(grain.validBinCount, n + 1 - grain.validBinCount).setZero();
 
 		grain.log2TransformLength = log2TransformLength;
 
 		for (int i = 0; i < grain.validBinCount; ++i)
 		{
-			const auto x = grain.transformed.row(i).sum();
+			const auto x = transformed.row(i).sum();
 			grain.energy[i] = x.real() * x.real() + x.imag() * x.imag();
 			grain.phase[i] = Phase::fromRadians(std::arg(x));
 		}
@@ -92,7 +96,7 @@ void Internal::Stretcher::synthesiseGrain(OutputChunk &outputChunk)
 	{
 		BUNGEE_ASSERT1(!grain.passthrough || grain.analysis.speed == grain.passthrough);
 
-		Synthesis::synthesise(log2SynthesisHop, grain, grains[1]);
+		synthesis.synthesise(log2SynthesisHop, grain, grains[1]);
 
 		BUNGEE_ASSERT2(!grain.passthrough || grain.rotation.topRows(grain.validBinCount).isZero());
 
@@ -102,11 +106,11 @@ void Internal::Stretcher::synthesiseGrain(OutputChunk &outputChunk)
 		t = t.exp();
 
 		if (grain.reverse())
-			grain.transformed.topRows(grain.validBinCount) = grain.transformed.topRows(grain.validBinCount).conjugate().colwise() * t;
+			transformed.topRows(grain.validBinCount) = transformed.topRows(grain.validBinCount).conjugate().colwise() * t;
 		else
-			grain.transformed.topRows(grain.validBinCount) = grain.transformed.topRows(grain.validBinCount).colwise() * t;
+			transformed.topRows(grain.validBinCount) = transformed.topRows(grain.validBinCount).colwise() * t;
 
-		transforms.inverse(grain.log2TransformLength, output.inverseTransformed, grain.transformed);
+		transforms.inverse(grain.log2TransformLength, output.inverseTransformed, transformed);
 	}
 
 	output.applySynthesisWindow(log2SynthesisHop, grains, output.synthesisWindow);

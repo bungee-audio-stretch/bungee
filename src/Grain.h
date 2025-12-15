@@ -34,6 +34,7 @@ struct Grain
 	};
 
 	int log2TransformLength;
+	int channelCount;
 	Request request;
 
 	double requestHop{};
@@ -49,13 +50,10 @@ struct Grain
 	InputChunk inputChunk{};
 	Analysis analysis{};
 
-	Eigen::ArrayXXcf transformed;
 	Eigen::ArrayX<Phase::Type> phase;
 	Eigen::ArrayXf energy;
 	Eigen::ArrayX<Phase::Type> rotation;
-	Eigen::ArrayX<Phase::Type> delta;
 	std::vector<Partials::Partial> partials;
-	Resample::Internal inputResampled;
 	Eigen::ArrayXXf inputCopy;
 
 	Grain(int log2SynthesisHop, int channelCount);
@@ -90,7 +88,7 @@ struct Grain
 		muteFrameCountHead = std::clamp<int>(muteFrameCountHead, 0, frameCount);
 		muteFrameCountTail = std::clamp<int>(muteFrameCountTail, 0, frameCount);
 
-		Map m((float *)data, frameCount, transformed.cols(), Stride(stride));
+		Map m((float *)data, frameCount, channelCount, Stride(stride));
 		BUNGEE_ASSERT2(!m.middleRows(muteFrameCountHead, m.rows() - muteFrameCountHead - muteFrameCountTail).hasNaN());
 
 		if (instrumentation.enabled || Bungee::Assert::level)
@@ -102,7 +100,7 @@ struct Grain
 
 	void overlapCheck(Eigen::Ref<Eigen::ArrayXXf> input, int muteFrameCountHead, int muteFrameCountTail, const Grain &previous, Internal::Instrumentation &instrumentation);
 
-	Eigen::Ref<Eigen::ArrayXXf> resampleInput(Eigen::Ref<Eigen::ArrayXXf> input, int log2WindowLength, int &muteFrameCountHead, int &muteFrameCountTail);
+	Eigen::Ref<Eigen::ArrayXXf> resampleInput(Eigen::Ref<Eigen::ArrayXXf> input, int log2WindowLength, int &muteFrameCountHead, int &muteFrameCountTail, Resample::Internal &resampled);
 };
 
 } // namespace Bungee

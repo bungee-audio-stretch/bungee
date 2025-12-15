@@ -8,6 +8,7 @@
 #include "Input.h"
 #include "Instrumentation.h"
 #include "Output.h"
+#include "Synthesis.h"
 #include "Timing.h"
 
 #include <memory>
@@ -22,8 +23,9 @@ struct Stretcher :
 	Input input;
 	Grains grains;
 	Output output;
-	Eigen::ArrayXXf previousWindowedInput;
+	Synthesis synthesis;
 	Eigen::ArrayXcf temporary;
+	Eigen::ArrayXXcf transformed;
 
 	Stretcher(SampleRates sampleRates, int channelCount, int log2SynthesisHopAdjust);
 

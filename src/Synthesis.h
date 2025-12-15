@@ -3,10 +3,26 @@
 
 #pragma once
 
+#include "Fourier.h"
 #include "Grain.h"
+#include "Phase.h"
 
-namespace Bungee::Synthesis {
+#include <Eigen/Core>
 
-void synthesise(int log2SynthesisHop, Grain &grain, Grain &previous);
+namespace Bungee {
 
-} // namespace Bungee::Synthesis
+struct Synthesis
+{
+	struct Temporal;
+
+	Eigen::ArrayX<Phase::Type> delta;
+
+	Synthesis(int log2TransformLength)
+	{
+		Fourier::resize<true>(log2TransformLength, 1, delta);
+	}
+
+	void synthesise(int log2SynthesisHop, Grain &grain, Grain &previous);
+};
+
+} // namespace Bungee
