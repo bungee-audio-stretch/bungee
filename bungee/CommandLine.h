@@ -38,6 +38,8 @@ struct Options :
 		add_options() //
 			("input", "input WAV filename", cxxopts::value<std::string>()) //
 			("output", "output WAV filename", cxxopts::value<std::string>()) //
+			;
+		add_options(helpGroups.emplace_back("Input")) //
 			("start", "start time in seconds", cxxopts::value<double>()->default_value("+0")) //
 			("stop", "stop time in seconds", cxxopts::value<double>()->default_value("-0")) //
 			;
