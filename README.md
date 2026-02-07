@@ -1,6 +1,6 @@
 # Bungee: Audio Time-Stretching & Pitch-Shifting Library
 
-Bungee is a modern, open-source C++ library for high-quality audio time-stretching and pitch-shifting in real-time or offline. Easily integrate powerful audio timescale processing into your application.
+Bungee is a modern, open-source C++ library for high-quality audio time-stretching and pitch-shifting in real-time or offline. It brings powerful audio timescale processing to your application.
 
 Bungee can adjust the speed of audio without affecting pitch; transpose audio pitch without affecting speed; or apply any combination of playhead position and pitch manipulation.
 * Simple, fast phase-vocoder-based algorithm with good quality audio output (🎧  hear [some comparisons](https://bungee.parabolaresearch.com/compare-audio-stretch-tempo-pitch-change.html) with other algorithms)
@@ -8,7 +8,7 @@ Bungee can adjust the speed of audio without affecting pitch; transpose audio pi
 
 Bungee is unique in its controllability, allowing continually changing audio tempo and pitch manipulation with seamless support of zero and negative playback speeds. So it can be used for a "smooth scrub" or for rendering lifelike audio for slow-motion videos.
 
-Bungee is often used for slowing down music or speech without affecting pitch. It is also popular in music software for changing tempo, transposing and other effects.
+Bungee is often used for slowing down music or speeding up speech without affecting pitch. It is also popular in music software for changing tempo, transposing and other effects.
 
  ⭐️ _To support Bungee, please consider [giving this repo a star](https://github.com/bungee-audio-stretch/bungee/stargazers)_ .
 
