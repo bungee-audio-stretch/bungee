@@ -197,7 +197,10 @@ struct Processor
 		}
 		void report()
 		{
-			std::cout << "Peak: " << std::fixed << std::setprecision(2) << std::showpos << 20.0f * std::log10(absMax) << " dBFS";
+			std::ios oldState(nullptr);
+			oldState.copyfmt(std::cout);
+			std::cout << std::fixed << std::setprecision(2) << std::showpos << 20.0f * std::log10(absMax) << " dBFS";
+			std::cout.copyfmt(oldState);
 		}
 	};
 
