@@ -100,7 +100,7 @@ if (APPLE)
   set(PKGCONFIG_LINK_FLAG "-framework ")
 else()
   set(PKGCONFIG_LINK_PATH -L)
-  set(PKGCONFIG_LINK_FLAG "-I")
+  set(PKGCONFIG_LINK_FLAG "-l")
 endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libbungee.pc.in ${CMAKE_CURRENT_BINARY_DIR}/libbungee.pc @ONLY)
 
