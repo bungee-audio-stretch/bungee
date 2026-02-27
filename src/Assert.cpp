@@ -6,7 +6,17 @@
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#if defined(_WIN32)
+#include <io.h>
+#include <process.h>
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
+#define getpid _getpid
+#define write _write
+#else
 #include <unistd.h>
+#endif
 #include <array>
 
 namespace Bungee::Assert {
