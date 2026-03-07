@@ -241,16 +241,17 @@ struct Processor
 			consider(x);
 			if constexpr (!std::is_same_v<Sample, float>)
 			{
-				x = std::ldexp(x, 8 * sizeof(Sample) - 1);
-				x = std::round(x);
-				if (x < std::numeric_limits<Sample>::min())
+				constexpr float min = float(std::numeric_limits<Sample>::min());
+				constexpr float max = float(std::numeric_limits<Sample>::max());
+				x = std::round(std::ldexp(x, 8 * sizeof(Sample) - 1));
+				if (x < min)
 				{
-					x = std::numeric_limits<Sample>::min();
+					x = min;
 					clipped = true;
 				}
-				if (x >= -(float)std::numeric_limits<Sample>::min())
+				else if (x > max)
 				{
-					x = std::numeric_limits<Sample>::max();
+					x = max;
 					clipped = true;
 				}
 			}
