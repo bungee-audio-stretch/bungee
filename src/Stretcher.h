@@ -48,7 +48,14 @@ struct Functions :
 	{
 		edition = []() { return *e; };
 		version = []() { return *v; };
-		create = [](SampleRates sampleRates, int channelCount, int log2SynthesisHop) { return (void *)new S(sampleRates, channelCount, log2SynthesisHop); };
+		create = [](SampleRates sampleRates, int channelCount, int log2SynthesisHop) {
+			struct Wrapper : S
+			{
+				// Workaround for specific toolchain bug
+				Wrapper(SampleRates sr, int c, int l) : S(sr, c, l) {}
+			};
+			return (void *)new Wrapper(sampleRates, channelCount, log2SynthesisHop);
+		};
 		destroy = [](void *stretcher) { delete reinterpret_cast<S *>(stretcher); };
 		enableInstrumentation = [](void *stretcher, int enable) { reinterpret_cast<S *>(stretcher)->Instrumentation::enableInstrumentation(enable); };
 		maxInputFrameCount = [](const void *stretcher) { return reinterpret_cast<const S *>(stretcher)->maxInputFrameCount(true); };
