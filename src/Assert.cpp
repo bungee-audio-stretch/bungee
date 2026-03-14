@@ -3,11 +3,14 @@
 
 #include "Assert.h"
 
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
-#include <unistd.h>
-#include <array>
+
+#ifdef BUNGEE_PETRIFY
+#	include <array>
+#	include <unistd.h>
+#	include <csignal>
+#endif
 
 namespace Bungee::Assert {
 
@@ -16,7 +19,7 @@ namespace Bungee::Assert {
 void fail(int level, const char *message, const char *file, int line)
 {
 	fprintf(stderr, "Failed: BUNGEE_ASSERT%d(%s)  at (%s: %d)\n", level, message, file, line);
-	std::abort();
+	__builtin_trap();
 }
 #	endif
 
