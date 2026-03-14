@@ -54,16 +54,18 @@ int main(int argc, const char *argv[])
 			// Here we loop over segments of input audio, and we control their lengths.
 			int inputSampleCount = pushSampleCount < 0 ? std::rand() % maxOutputSampleCount + 1 : pushSampleCount;
 
-			for (int c = 0; c < processor.channelCount; ++c)
-				inputChannelPointers[c] = &processor.inputBuffer[position + c * processor.inputChannelStride];
-
-			if (inputSampleCount > processor.inputFrameCount - position)
+			if (const int remainingFrames = std::max(0, processor.inputFrameCount - position) > 0)
 			{
-				if (position < processor.inputFrameCount)
-					inputSampleCount = processor.inputFrameCount - position; // shorter last segment of real audio
-				else
-					for (int c = 0; c < processor.channelCount; ++c)
-						inputChannelPointers[c] = nullptr; // indicates silent segment
+				for (int c = 0; c < processor.channelCount; ++c)
+					inputChannelPointers[c] = &processor.inputBuffer[position + c * processor.inputChannelStride];
+
+				if (inputSampleCount > remainingFrames)
+					inputSampleCount = remainingFrames; // shorter last segment of real audio
+			}
+			else
+			{
+				for (int c = 0; c < processor.channelCount; ++c)
+					inputChannelPointers[c] = nullptr; // indicates silent segment
 			}
 
 			const double outputFrameCountIdeal = (inputSampleCount * processor.sampleRates.output) / (request.speed * processor.sampleRates.input);
