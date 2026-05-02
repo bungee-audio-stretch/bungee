@@ -302,16 +302,16 @@ struct Processor
 			if (subchunkCount++ == 0)
 			{
 				sampleRates.input = read<uint32_t>(&wavHeader[24]);
-				if (sampleRates.input < 8000 || sampleRates.input > 192000)
-					fail("Please check your input file: it seems not to be a compatible WAV file (unexpected sample rate)");
+				if (sampleRates.input < 8000 || sampleRates.input > 384000)
+					fail("Please check your input file: sample rate must be in the range [8000, 384000] kHz");
 
 				if (parameters["output-rate"].has_default())
 					sampleRates.output = sampleRates.input;
 				else
 					sampleRates.output = parameters["output-rate"].as<int>();
 
-				if (sampleRates.output < 8000 || sampleRates.output > 192000)
-					fail("Output sample rate must be in the range [8000, 192000] kHz");
+				if (sampleRates.output < 8000 || sampleRates.output > 384000)
+					fail("Output sample rate must be in the range [8000, 384000] kHz");
 
 				sampleFormat = read<uint16_t>(&wavHeader[20]);
 				channelCount = read<uint16_t>(&wavHeader[22]);
