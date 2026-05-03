@@ -158,7 +158,7 @@ template <class Interpolation, class Mode>
 struct Loop
 {
 	template <bool ratioIsConstant>
-	static __attribute__((noinline)) void run(RatioState<ratioIsConstant> &ratioState, Internal &internal, External external) // const & ext
+	static void run(RatioState<ratioIsConstant> &ratioState, Internal &internal, External external) // const & ext
 	{
 		const Assert::FloatingPointExceptions floatingPointExceptions(FE_INEXACT | FE_UNDERFLOW);
 
