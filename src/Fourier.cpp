@@ -61,7 +61,7 @@ void Pffft::Kernel::inverse(int log2TransformLength, float *t, std::complex<floa
 
 } // namespace
 
-typedef Cache<Pffft, 16> Implementation;
+typedef Cache<Pffft, 20> Implementation;
 
 Transforms::Transforms()
 {

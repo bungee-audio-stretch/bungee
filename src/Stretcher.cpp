@@ -67,6 +67,7 @@ void Internal::Stretcher::analyseGrain(const float *data, std::ptrdiff_t stride,
 
 		const auto n = Fourier::binCount(grain.log2TransformLength) - 1;
 		grain.validBinCount = std::min<int>(std::ceil(n / grain.resampleOperations.output.ratio), n) + 1;
+		grain.validBinCount = std::min(grain.validBinCount, std::numeric_limits<decltype(Partials::Partial::end)>::max() - 1);
 		transformed.middleRows(grain.validBinCount, n + 1 - grain.validBinCount).setZero();
 
 		grain.log2TransformLength = log2TransformLength;
