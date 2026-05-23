@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <span>
+#include <vector>
 
 #pragma once
 
