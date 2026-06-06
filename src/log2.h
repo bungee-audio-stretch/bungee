@@ -14,7 +14,7 @@ template <bool floor = false>
 static inline int log2(unsigned x)
 {
 	BUNGEE_ASSERT1(x > 0);
-	BUNGEE_ASSERT1(floor || !(x & (x << 1)));
+	BUNGEE_ASSERT1(floor || !(x & (x - 1)));
 
 	int y;
 	if constexpr (floor)
