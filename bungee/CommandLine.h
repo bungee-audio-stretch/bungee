@@ -464,8 +464,14 @@ struct Processor
 		if (std::signbit(frameStop))
 			frameStop += inputFrameCount;
 
-		if (frameStart < 0 || frameStart >= inputFrameCount || frameStop < 0 || frameStop > inputFrameCount || frameStart >= frameStop)
-			fail("Please check your start/stop times: they are outside the range of the input audio");
+		if (frameStart < 0 || frameStop < 0 || frameStart >= frameStop || frameStart >= inputFrameCount)
+			fail("Please check your start/stop times: they are invalid");
+
+		if (frameStop > inputFrameCount)
+		{
+			std::cerr << "Warning: stop time exceeds input audio length, it will  have no effect\n";
+			frameStop = inputFrameCount;
+		}
 
 		inputChannelStride = inputFrameCount = int(frameStop - frameStart);
 		inputBuffer.resize(channelCount * inputChannelStride);
