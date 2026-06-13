@@ -15,13 +15,6 @@
 namespace Bungee::Assert {
 
 #if BUNGEE_SELF_TEST
-#	ifndef BUNGEE_ASSERT_FAIL_EXTERNAL
-void fail(int level, const char *message, const char *file, int line)
-{
-	fprintf(stderr, "Failed: BUNGEE_ASSERT%d(%s)  at (%s: %d)\n", level, message, file, line);
-	__builtin_trap();
-}
-#	endif
 
 FloatingPointExceptions::FloatingPointExceptions(int allowed) :
 	allowed(allowed)

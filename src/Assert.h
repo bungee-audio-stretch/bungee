@@ -20,7 +20,15 @@ namespace Bungee::Assert {
 
 static constexpr int level = BUNGEE_SELF_TEST;
 
+#if BUNGEE_SELF_TEST and !defined(BUNGEE_ASSERT_FAIL_EXTERNAL)
+inline void fail(int level, const char *message, const char *file, int line)
+{
+	fprintf(stderr, "Failed: BUNGEE_ASSERT%d(%s)  at (%s: %d)\n", level, message, file, line);
+	__builtin_trap();
+}
+#else
 void fail(int level, const char *m2, const char *file, int line);
+#endif
 
 #define BUNGEE_ASSERT(l, condition) \
 	do \
