@@ -48,7 +48,7 @@ static inline constexpr T fromRevolutions(float revolutions)
 {
 	constexpr auto shift = 8 * sizeof(T);
 	const float k = float(1ull << shift);
-	const T phase = T(k * revolutions);
+	const T phase = T(int32_t(k * revolutions));
 	return phase;
 }
 
@@ -65,7 +65,7 @@ static inline constexpr T fromRadians(float radians)
 {
 	constexpr auto shift = 8 * sizeof(T);
 	constexpr float k = float((1ull << shift) / (2 * std::numbers::pi));
-	const T phase = T(k * radians);
+	const T phase = T(int32_t(k * radians));
 	return phase;
 }
 
