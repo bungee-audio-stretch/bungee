@@ -23,7 +23,7 @@ static constexpr int level = BUNGEE_SELF_TEST;
 #if BUNGEE_SELF_TEST and !defined(BUNGEE_ASSERT_FAIL_EXTERNAL)
 inline void fail(int level, const char *message, const char *file, int line)
 {
-	fprintf(stderr, "Failed: BUNGEE_ASSERT%d(%s)  at (%s: %d)\n", level, message, file, line);
+	fprintf(stderr, "Failed: BUNGEE_ASSERT%d(%s)  at (%s:%d)\n", level, message, file, line);
 	__builtin_trap();
 }
 #else
@@ -33,9 +33,9 @@ void fail(int level, const char *m2, const char *file, int line);
 #define BUNGEE_ASSERT(l, condition) \
 	do \
 	{ \
-		if constexpr (l <= Bungee::Assert::level) \
+		if constexpr (l <= ::Bungee::Assert::level) \
 			if (!(condition)) \
-				Bungee::Assert::fail(l, #condition, __FILE__, __LINE__); \
+				::Bungee::Assert::fail(l, #condition, __FILE__, __LINE__); \
 	} while (false)
 
 // Checks with cost O(N) (for tests applied a small number of times per grain)
