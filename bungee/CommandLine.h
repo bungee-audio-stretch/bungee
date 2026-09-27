@@ -11,11 +11,10 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <span>
+#include <limits>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -243,7 +242,11 @@ struct Processor
 			{
 				constexpr float min = float(std::numeric_limits<Sample>::min());
 				constexpr float max = float(std::numeric_limits<Sample>::max());
-				x = std::round(std::ldexp(x, 8 * sizeof(Sample) - 1));
+				constexpr float mult = float(1ull << (8 * sizeof(Sample) - 1));
+
+				x *= mult;
+				x += (x >= 0.0f) ? 0.5f : -0.5f;
+
 				if (x < min)
 				{
 					x = min;
