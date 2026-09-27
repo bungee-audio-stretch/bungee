@@ -28,7 +28,11 @@ if (BUNGEE_BUILD_SHARED_LIBRARY)
 else()
   add_library(bungee_library STATIC ${BUNGEE_LIBRARY_HEADERS} ${BUNGEE_SOURCE_FILES})
 endif()  
-target_include_directories(bungee_library PRIVATE  submodules/eigen submodules .)
+target_include_directories(bungee_library PRIVATE  
+  submodules/eigen 
+  submodules/pffft
+  .
+)
 target_compile_definitions(bungee_library PRIVATE
   BUNGEE_VISIBILITY=${BUNGEE_EXPORT}
   BUNGEE_SELF_TEST=${BUNGEE_SELF_TEST}
