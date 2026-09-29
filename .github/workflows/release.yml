@@ -12,11 +12,11 @@ permissions:
 
 jobs:
   build_ubuntu:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       
       - name: 🛒 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
@@ -46,7 +46,7 @@ jobs:
           echo "\`\`\`" | tee -a $GITHUB_STEP_SUMMARY
           
       - name: ✈️ Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ubuntu
           path: ${{github.workspace}}/artifact.tgz
@@ -60,14 +60,17 @@ jobs:
     steps:
       
       - name: 🛒 Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
           path: repo
 
-      - name: 🪂 Download artifacts that were built un Ubuntu
-        uses: actions/download-artifact@v4
+      - name: 🪂 Download artifacts that were built on Ubuntu
+        uses: actions/download-artifact@v8
+        with:
+          name: ubuntu
+          path: ${{github.workspace}}/ubuntu
 
       - name: 📦Extract Ubuntu artifacts
         working-directory: ${{github.workspace}}/ubuntu
