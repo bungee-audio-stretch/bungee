@@ -7,6 +7,7 @@
 
 #if defined(__ANDROID__)
 #	include <android/log.h>
+#	include <unistd.h>
 #elif defined(__APPLE__)
 #	include <os/log.h>
 #elif defined(_WIN32)
@@ -34,7 +35,10 @@ void log_write(const char *text, size_t length)
 #if defined(_WIN32)
 	::_write(2, text, (int)length);
 #else
-	::write(2, text, length);
+	// write() is warn_unused_result on glibc; capture the result so the
+	// diagnostic is silenced without a (void) cast, which glibc ignores.
+	const ssize_t written = ::write(2, text, length);
+	(void)written;
 #endif
 }
 
