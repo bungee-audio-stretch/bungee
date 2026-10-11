@@ -1,6 +1,6 @@
 [submodule "eigen"]
 	path = submodules/eigen
-	url = https://gitlab.com/libeigen/eigen.git
+	url = https://github.com/eigenteam/eigen-git-mirror
 	shallow = true
 [submodule "cxxopts"]
 	path = submodules/cxxopts
