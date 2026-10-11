@@ -240,12 +240,13 @@ struct Processor
 			consider(x);
 			if constexpr (!std::is_same_v<Sample, float>)
 			{
-				constexpr float min = float(std::numeric_limits<Sample>::min());
-				constexpr float max = float(std::numeric_limits<Sample>::max());
-				constexpr float mult = float(1ull << (8 * sizeof(Sample) - 1));
+				constexpr float mult = 2.f * (Sample(1) << (8 * sizeof(Sample) - 2));
 
 				x *= mult;
 				x += (x >= 0.0f) ? 0.5f : -0.5f;
+
+				constexpr float max = float(std::numeric_limits<Sample>::max() - std::numeric_limits<Sample>::max() / (1 << 24));
+				constexpr float min = float(std::numeric_limits<Sample>::min());
 
 				if (x < min)
 				{
